@@ -23,7 +23,7 @@
             :alt="selectedPhoto.originalName || ''">
 
           <button type="button"
-            class="close"
+            class="gallery__close"
             @click="closePhoto"/>
 
           <template v-if="showThumbnails">
