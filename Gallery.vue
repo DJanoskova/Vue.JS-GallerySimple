@@ -2,12 +2,15 @@
   <div class="gallery">
 
     <div class="gallery__photo"
-      v-for="photo in photos"
+      :class="{'last': index + 1 === displayMax}"
+      v-for="(photo, index) in displayedPhotos"
       v-if="showPreviews"
       :key="photo.id">
       <img :src="baseUrl + photo.path + '/' + photo.name"
         :alt="photo.originalName || ''"
         @click="selectPhoto(photo.id)">
+      <i class="el-icon-plus"
+        v-if="index + 1 === displayMax && !allDisplayed"></i>
     </div>
 
     <transition name="fade">
@@ -21,16 +24,16 @@
 
           <button type="button"
             class="close"
-            @click="closePhoto" />
+            @click="closePhoto"/>
 
           <template v-if="showThumbnails">
             <button type="button"
-              class="arrow arrow--prev"
-              @click="prev"> &lt;
+              class="gallery__arrow gallery__arrow--prev"
+              @click.stop="prev"> &lt;
             </button>
             <button type="button"
-              class="arrow arrow--next"
-              @click="next"> &gt;
+              class="gallery__arrow gallery__arrow--next"
+              @click.stop="next"> &gt;
             </button>
           </template>
         </div>
@@ -58,7 +61,8 @@ import { findIndex } from 'lodash'
 export default {
   props: {
     photos: {
-      type: Array
+      type: Array,
+      default: () => []
     },
     showThumbnails: {
       type: Boolean,
@@ -67,6 +71,9 @@ export default {
     showPreviews: {
       type: Boolean,
       default: true
+    },
+    displayMax: {
+      type: Number
     }
   },
   data () {
@@ -77,27 +84,29 @@ export default {
   },
   methods: {
     selectPhoto (photoId) {
-      console.log(findIndex(this.photos, { id: photoId }))
-      this.selectedIndex = findIndex(this.photos, { id: photoId })
+      this.selectedIndex = findIndex(this.photos, {id: photoId})
     },
     closePhoto () {
       this.selectedIndex = null
     },
     next () {
       let index = this.selectedIndex
-      if (index < this.photos.length - 1) this.selectedIndex = index++
-      else this.selectedIndex = 0
+      if (index < this.photos.length - 1) index++
+      else index = 0
+      this.selectedIndex = index
     },
     prev () {
       let index = this.selectedIndex
-      if (index > 0) this.selectedIndex = index--
-      else this.selectedIndex = this.photos.length - 1
+      if (index > 0) index--
+      else index = this.photos.length - 1
+      this.selectedIndex = index
     },
     keydownListener (event) {
-      if (event.key &&
-        ((event.key === 'Escape' || event.key === 'Esc') ||
-          event.keyCode === 27)
-      ) this.closePhoto()
+      const isEscape = event.key && ((event.key === 'Escape' || event.key === 'Esc') || event.keyCode === 27)
+      if (isEscape) {
+        this.closePhoto()
+        return
+      }
       if (event.key && (event.key === 'ArrowLeft' || event.keyCode === 37)) this.prev()
       if (event.key && (event.key === 'ArrowRight' || event.keyCode === 39)) this.next()
     }
@@ -106,6 +115,14 @@ export default {
     selectedPhoto () {
       if (this.selectedIndex === null) return null
       return this.photos[this.selectedIndex]
+    },
+    displayedPhotos () {
+      if (!this.displayMax) return this.photos
+      const photos = [...this.photos]
+      return photos.splice(0, this.displayMax)
+    },
+    allDisplayed () {
+      return this.displayedPhotos.length === this.photos.length
     }
   },
   created () {
